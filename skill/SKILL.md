@@ -1,0 +1,77 @@
+# etchmem Skill
+
+> Thin agent-skill wrapper over the `etchmem` Python library.
+> All logic lives in the library — these scripts marshal CLI arguments
+> into `etchmem` and results back to stdout.
+
+## When to use this skill
+
+Trigger this skill when an agent needs to:
+- **Deposit** new information: `remember.py`
+- **Retrieve** knowledge (with automatic reconsolidation tracking): `recall.py`
+- **Consolidate** the buffer into durable knowledge: `consolidate.py`
+
+## Assumptions
+
+- The `etchmem` Python package is installed (`pip install etchmem`).
+- The Chroma data directory defaults to `./.etchmem/` relative to CWD.
+  Override with `SKILLMEM_DATA_DIR` environment variable.
+- An LLM API key (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`) must be set
+  for `consolidate.py` (synthesis step). `remember.py` and `recall.py`
+  do not require an LLM key.
+
+## Scripts
+
+### `skill/scripts/remember.py`
+
+Deposits a raw record into the relational collection.
+
+```
+python skill/scripts/remember.py \
+  --data "Text to remember" \
+  [--skill summarizer] \
+  [--hint 0.8] \
+  [--metadata '{"source": "url"}']
+```
+
+### `skill/scripts/recall.py`
+
+Retrieves knowledge and emits a recall-event for future reconsolidation.
+
+```
+python skill/scripts/recall.py \
+  --query "What do I know about X?" \
+  [--skill summarizer] \
+  [--top-k 5] \
+  [--hint 0.6]
+```
+
+Output: JSON array of `SearchResult` objects (id, content, score, source, skill).
+
+### `skill/scripts/consolidate.py`
+
+Runs the consolidation worker: intake → cluster → form/reconsolidate → flush.
+
+```
+python skill/scripts/consolidate.py \
+  [--num-records all] \
+  [--method LIFO]
+```
+
+Output: JSON summary dict with counts (formed, reconsolidated, dropped, kept,
+superseded, flushed).
+
+## Method-to-script mapping
+
+| Library method | Script |
+|----------------|--------|
+| `engine.remember()` | `skill/scripts/remember.py` |
+| `engine.recall()` | `skill/scripts/recall.py` |
+| `engine.consolidate()` | `skill/scripts/consolidate.py` |
+
+## Design notes
+
+- The skill is a **presentation layer** only. Debug against the library.
+- Both surfaces (direct import and skill scripts) call **identical code**.
+- The Chroma data directory is the same whether called from the library
+  or the skill scripts, so data is always shared.
