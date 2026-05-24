@@ -1,6 +1,12 @@
 # etchmem
 
-A lightweight, embeddable memory engine for LLM agents. Agents remember things, recall them later, and the stored knowledge quietly matures through use — no extra plumbing required.
+**Where agents grow up — not where they take notes.**
+
+Modern AI agents are built from skills. Every time a skill runs, it leaves a trail: results, feedback, corrections, surprises. That trail is experience — and experience is how an agent learns how the world actually works.
+
+`etchmem` is memory for that maturation. Not a scratchpad for the current session. Not a user profile to personalize replies. Not a long chat log you grep when context runs out. It is the layer where raw observations turn into durable understanding — how things work, what users react to, what failed last time — and keep sharpening every time the agent draws on it again.
+
+Over time, knowledge compounds. The agent stops merely following scenarios and starts carrying a worldview shaped by use.
 
 ```bash
 pip install etchmem
@@ -10,7 +16,7 @@ pip install etchmem
 
 ## What it is
 
-`etchmem` gives your agent a persistent memory that improves over time. You deposit raw observations, retrieve them with natural-language queries, and periodically consolidate — at which point the engine synthesizes scattered signals into compact knowledge articles and rewrites anything that's been recalled against fresh context.
+`etchmem` gives your agent a persistent memory that matures through living. You deposit raw observations — facts, outcomes, feedback — scoped to a skill or left general. You retrieve with natural-language queries. Periodically you consolidate, and the engine synthesizes scattered signal into compact knowledge articles, rewriting anything that has been recalled against fresh context.
 
 It is not a vector database and not an agent runtime. It sits above [ChromaDB](https://www.trychroma.com/), which handles all storage and embedding, and exposes exactly **three methods**.
 
@@ -24,7 +30,7 @@ Memory is kept in three tiers:
 - **Buffer** — a working space for deposits and recall-events, waiting for the next consolidation run.
 - **Injected** — synthesized knowledge articles, the primary search target. Only current knowledge is kept; superseded articles are hard-deleted.
 
-The key idea is **reconsolidation**: every `recall()` call emits a recall-event into the buffer. When you later call `consolidate()`, the engine detects which injected articles were used, checks whether fresh signal changes anything, and rewrites them if needed. Knowledge that gets recalled stays current as a side-effect of being recalled. Knowledge nobody asks about simply rests.
+The key idea is **reconsolidation**: every `recall()` call emits a recall-event into the buffer. When you later call `consolidate()`, the engine detects which injected articles were used, checks whether fresh signal changes anything, and rewrites them if needed. Knowledge that gets recalled stays current as a side-effect of being recalled. Knowledge nobody asks about simply rests. This is how a skill — or the agent as a whole — accumulates experience instead of starting from zero each run.
 
 Embeddings are computed locally by ChromaDB's built-in model — no external embedding API. Synthesis (the rewrite step inside `consolidate`) calls an LLM via `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`.
 
