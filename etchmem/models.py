@@ -112,6 +112,7 @@ class SearchResult:
     score: float                     # asymmetric blended score
     source: str                      # "injected" | "relational" | "blended"
     skill: str | None = None
+    created_at: float = 0.0          # unix timestamp of the original deposit
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

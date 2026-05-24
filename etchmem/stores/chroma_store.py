@@ -108,13 +108,15 @@ def _result_to_search_result(
     source: str = "unknown",
 ) -> SearchResult:
     skill = metadata.get("skill") or None
+    created_at = float(metadata.get("created_at", 0.0))
     return SearchResult(
         id=doc_id,
         content=document,
         score=weight * (1.0 - distance),   # convert distance → similarity score
         source=source,
         skill=skill,
-        metadata={k: v for k, v in metadata.items() if k != "skill"},
+        created_at=created_at,
+        metadata={k: v for k, v in metadata.items() if k not in ("skill", "created_at")},
     )
 
 

@@ -14,6 +14,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -61,7 +62,19 @@ def recall(query: str) -> str:
     results = json.loads(raw) if raw else []
     if not results:
         return "No relevant memories found."
-    return "\n".join(f"[{r['score']:.2f}] {r['content']}" for r in results)
+    now = time.time()
+    lines = []
+    for r in results:
+        age_s = now - r.get("created_at", now)
+        age_h = age_s / 3600
+        if age_h < 1:
+            age_str = f"{int(age_s / 60)}m ago"
+        elif age_h < 48:
+            age_str = f"{age_h:.1f}h ago"
+        else:
+            age_str = f"{age_h / 24:.1f}d ago"
+        lines.append(f"[score={r['score']:.2f} | {age_str} | {r['source']}] {r['content']}")
+    return "\n".join(lines)
 
 
 @etchmem_skill.tool_plain
