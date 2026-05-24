@@ -25,6 +25,7 @@ from __future__ import annotations
 import json
 import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
 from etchmem.config import Config
@@ -53,6 +54,9 @@ accurate knowledge article from a set of raw signal fragments.
 ## Instructions
 - Write a single, cohesive knowledge article that captures all key facts.
 - Do NOT invent facts not present in the fragments.
+- Each fragment may be prefixed with a timestamp like `[21 Jun 2025, 15:25 UTC]`.
+  Preserve these timestamps verbatim inline, anchoring the facts they precede,
+  e.g. "As of 21 Jun 2025, 15:25 UTC, the deployment was rolled back."
 - At the end of the article, output a JSON block on its own line:
   {{"tags": {{"access_level": "...", "topic": "...", "product": "..."}}}}
 
@@ -74,6 +78,9 @@ accurate and incorporates the new information.
 - Preserve ALL load-bearing facts from the existing article.
 - Incorporate relevant new information from the fresh context.
 - Remove outdated claims only when the fresh context explicitly supersedes them.
+- Fresh context fragments may be prefixed with a timestamp like `[21 Jun 2025, 15:25 UTC]`.
+  Preserve these timestamps verbatim inline, anchoring the facts they precede.
+  Also carry forward any timestamps already present in the existing article.
 - At the end, output a JSON block on its own line:
   {{"tags": {{"access_level": "...", "topic": "...", "product": "..."}}}}
 
@@ -91,6 +98,13 @@ Does the NEW article preserve the key facts of the OLD article?
 
 Reply with exactly one word: YES or NO.
 """
+
+
+def _stamp(ts: float) -> str:
+    """Format a Unix timestamp as a human-readable UTC string, e.g. '21 Jun 2025, 15:25 UTC'."""
+    if not ts:
+        return "unknown time"
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%-d %b %Y, %H:%M UTC")
 
 
 def _parse_synthesis_output(raw: str) -> tuple[str, dict]:
@@ -351,8 +365,10 @@ class Worker:
                     return [item]
             return []
 
-        # Synthesize
-        fragments = "\n\n---\n\n".join(d.content for d in cluster.deposits)
+        # Synthesize — prefix each fragment with its absolute UTC timestamp
+        fragments = "\n\n---\n\n".join(
+            f"[{_stamp(d.created_at)}]\n{d.content}" for d in cluster.deposits
+        )
         prompt = _FORMATION_PROMPT.format(fragments=fragments)
         raw = self._connector.complete(prompt)
         article_text, tags = _parse_synthesis_output(raw)
@@ -396,8 +412,10 @@ class Worker:
                             current_articles[r.id] = item
                             break
 
-        # Fresh deposit content for the cluster
-        fresh_texts = [d.content for d in cluster.deposits]
+        # Fresh deposit content for the cluster — prefix with absolute UTC timestamps
+        fresh_texts = [
+            f"[{_stamp(d.created_at)}]\n{d.content}" for d in cluster.deposits
+        ]
         snapshots = [re.relational_snapshot for re in cluster.recall_events]
         all_fresh = fresh_texts + snapshots
         fresh_combined = "\n\n---\n\n".join(t for t in all_fresh if t.strip())

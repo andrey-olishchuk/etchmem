@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 from etchmem.config import Config
@@ -87,12 +88,22 @@ class Recaller:
         merged = self._merge(injected_results, relational_results, top_k)
 
         # ── 4. Emit recall-event into buffer ──────────────────────────────
-        relational_snapshot = "\n\n".join(r.content for r in relational_results)
+        # Stamp each relational hit so time context survives into the snapshot
+        relational_snapshot = "\n\n".join(
+            f"[{self._stamp(r.created_at)}]\n{r.content}" for r in relational_results
+        )
         self._emit_recall_event(query, relational_snapshot, skill, hint)
 
         return merged
 
     # ── Helpers ───────────────────────────────────────────────────────────
+
+    @staticmethod
+    def _stamp(ts: float) -> str:
+        """Format a Unix timestamp as a human-readable UTC string."""
+        if not ts:
+            return "unknown time"
+        return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%-d %b %Y, %H:%M UTC")
 
     def _merge(
         self,

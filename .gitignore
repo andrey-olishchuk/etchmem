@@ -4,4 +4,6 @@ venv
 pytest-cache*
 .env
 PIP-DEPLOY.md
+dist/*
+
 
