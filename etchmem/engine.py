@@ -176,6 +176,77 @@ class Engine:
         self._connector = build_connector(self._cfg)
         self._connector_built = True
 
+    def export(self) -> dict[str, Any]:
+        """
+        Serialize the entire injected knowledge store as JSON.
+
+        Writes every synthesized article, tag, and metadata from the
+        *injected* collection into individual ``.json`` files under::
+
+            .etchmem/export/<UTC-timestamp>/   (one file per document)
+
+        The export root is a sibling of ``config.data_dir`` named
+        ``.etchmem``, so it lives next to the Chroma data directory in
+        the working tree rather than inside it.
+
+        Use the export to:
+          - Transfer institutional memory to another agent.
+          - Use accumulated experience directly as LLM fine-tuning data:
+            knowledge shaped by real task outcomes, not hand-authored
+            examples.  Experience becomes a transferable artifact.
+
+        Returns:
+            dict with keys:
+
+            ``export_dir``
+                Absolute path of the timestamped directory that was
+                created.
+            ``count``
+                Number of documents written.
+            ``documents``
+                List of dicts, one per exported article, each containing
+                ``id``, ``content``, ``source_hashes``, ``skill``,
+                ``tags``, ``metadata``, and ``created_at``.
+        """
+        import datetime
+        import json as _json
+        import os
+
+        # Derive export root: <parent-of-data_dir>/.etchmem/export/<ts>
+        data_dir_abs = os.path.abspath(self._cfg.data_dir)
+        parent = os.path.dirname(data_dir_abs)
+        timestamp = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        export_dir = os.path.join(parent, ".etchmem", "export", timestamp)
+        os.makedirs(export_dir, exist_ok=True)
+
+        # Fetch all InjectedArticle documents
+        from etchmem.models import InjectedArticle
+        raw = self._injected.get_all(filters={"doc_type": "injected"})
+
+        documents: list[dict[str, Any]] = []
+        for item in raw:
+            if not isinstance(item, InjectedArticle):
+                continue
+            doc_dict: dict[str, Any] = {
+                "id": item.id,
+                "content": item.content,
+                "source_hashes": sorted(item.source_hashes),
+                "skill": item.skill,
+                "tags": item.tags,
+                "metadata": item.metadata,
+                "created_at": item.created_at,
+            }
+            file_path = os.path.join(export_dir, f"{item.id}.json")
+            with open(file_path, "w", encoding="utf-8") as fh:
+                _json.dump(doc_dict, fh, indent=2, ensure_ascii=False)
+            documents.append(doc_dict)
+
+        return {
+            "export_dir": export_dir,
+            "count": len(documents),
+            "documents": documents,
+        }
+
     # ── Convenience properties ────────────────────────────────────────────
 
     @property

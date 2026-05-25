@@ -18,7 +18,7 @@ pip install etchmem
 
 `etchmem` gives your agent a persistent memory that matures through living. You deposit raw observations — facts, outcomes, feedback — scoped to a skill or left general. You retrieve with natural-language queries. Periodically you consolidate, and the engine synthesizes scattered signal into compact knowledge articles, rewriting anything that has been recalled against fresh context.
 
-It is not a vector database and not an agent runtime. It sits above [ChromaDB](https://www.trychroma.com/), which handles all storage and embedding, and exposes exactly **three methods**.
+It is not a vector database and not an agent runtime. It sits above [ChromaDB](https://www.trychroma.com/), which handles all storage and embedding, and exposes a small, deliberate API: remember, recall, consolidate, export, and stats.
 
 ---
 
@@ -60,6 +60,18 @@ Retrieves relevant knowledge and emits a recall-event for future reconsolidation
 
 Runs the consolidation worker: clusters the buffer, forms new injected articles, reconsolidates recalled articles against fresh context, hard-deletes superseded ones. Returns a summary dict with counts (`formed`, `reconsolidated`, `dropped`, `kept`, `flushed`, `superseded`). Requires an LLM API key.
 
+### `export() → dict`
+
+Serializes the entire injected knowledge store to disk. Writes one `<id>.json` file per synthesized article into `.etchmem/export/<UTC-timestamp>/` next to the data directory. No LLM call — cheap.
+
+Returns `{"export_dir": "...", "count": N, "documents": [...]}`.
+
+Use this to transfer institutional memory to another agent, or to produce fine-tuning data shaped by real task outcomes rather than hand-authored examples. Experience becomes a portable artifact.
+
+### `stats() → dict`
+
+Returns live collection sizes for all three tiers: `{"relational": N, "buffer": N, "injected": N}`. Useful for monitoring and debugging.
+
 ---
 
 ## Hello world
@@ -92,6 +104,12 @@ print(summary)
 # will be blended in during reconsolidation.
 results = engine.recall("Eiffel Tower visitors")
 print(results[0].content)
+
+# Export the full knowledge store — one JSON file per synthesized article.
+# Transfer to another agent, or use as fine-tuning data.
+result = engine.export()
+print(result["export_dir"])   # e.g. /your/project/.etchmem/export/20260525T120000Z
+print(result["count"])        # 1
 ```
 
 ---

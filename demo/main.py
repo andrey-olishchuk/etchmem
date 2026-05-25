@@ -28,13 +28,21 @@ load_dotenv(Path(__file__).parent / ".env")
 DEMO_DIR    = Path(__file__).parent
 SKILL_DIR   = DEMO_DIR.parent / "skill"
 SCRIPTS_DIR = SKILL_DIR / "scripts"
+ETCHMEM_SRC = str(DEMO_DIR.parent)   # local source root (has engine.export)
 DATA_DIR    = str(DEMO_DIR / ".etchmem")
 
 
 def _run_script(script: str, args: list[str]) -> str:
-    """Run an etchmem skill script and return its stdout."""
+    """Run an etchmem skill script and return its stdout.
+
+    PYTHONPATH is prepended with the local etchmem source directory so that
+    the subprocess always imports the local package rather than any older
+    pip-installed version.
+    """
+    env = os.environ.copy()
+    env["PYTHONPATH"] = ETCHMEM_SRC + os.pathsep + env.get("PYTHONPATH", "")
     cmd = [sys.executable, str(SCRIPTS_DIR / script)] + args + ["--data-dir", DATA_DIR]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, env=env)
     if proc.returncode != 0:
         raise RuntimeError(proc.stderr.strip() or f"{script} exited {proc.returncode}")
     return proc.stdout.strip()
@@ -91,6 +99,21 @@ def consolidate() -> str:
         f"kept={s.get('kept', 0)}, "
         f"flushed={s.get('flushed', 0)}"
     )
+
+
+@etchmem_skill.tool_plain
+def export() -> str:
+    """Export the full injected knowledge store to JSON files (skill/scripts/export.py).
+    Writes one JSON file per synthesized article into .etchmem/export/<timestamp>/.
+    No LLM key required. Use when the user asks to export, save, back up, or
+    transfer memory/knowledge."""
+    raw = _run_script("export.py", [])
+    s = json.loads(raw)
+    count = s.get("count", 0)
+    export_dir = s.get("export_dir", "unknown")
+    if count == 0:
+        return f"Export complete — no synthesized articles found (run consolidate first). Directory: {export_dir}"
+    return f"Export complete — {count} article{'s' if count != 1 else ''} written to: {export_dir}"
 
 
 # ── agent ─────────────────────────────────────────────────────────────────────

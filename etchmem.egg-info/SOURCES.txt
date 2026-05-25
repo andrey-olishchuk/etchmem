@@ -24,6 +24,7 @@ etchmem/util/__init__.py
 etchmem/util/affectability.py
 etchmem/util/hashing.py
 tests/test_consolidate_idempotent.py
+tests/test_export.py
 tests/test_formation_buckets.py
 tests/test_recall.py
 tests/test_reconsolidation.py

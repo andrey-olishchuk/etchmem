@@ -10,6 +10,7 @@ Trigger this skill when an agent needs to:
 - **Deposit** new information: `remember.py`
 - **Retrieve** knowledge (with automatic reconsolidation tracking): `recall.py`
 - **Consolidate** the buffer into durable knowledge: `consolidate.py`
+- **Export** the full knowledge store to JSON files: `export.py`
 
 ## Assumptions
 
@@ -61,6 +62,28 @@ python skill/scripts/consolidate.py \
 Output: JSON summary dict with counts (formed, reconsolidated, dropped, kept,
 superseded, flushed).
 
+### `skill/scripts/export.py`
+
+Serializes the entire injected knowledge store to JSON files. Each synthesized
+article is written as a separate `<id>.json` file under
+`.etchmem/export/<UTC-timestamp>/` (sibling of the data directory). No LLM
+key required. Use this to transfer institutional memory to another agent, or
+as fine-tuning data shaped by real task outcomes.
+
+```
+python skill/scripts/export.py \
+  [--data-dir .skillmem]
+```
+
+Output: JSON summary dict:
+```json
+{
+  "export_dir": "/abs/path/.etchmem/export/20260525T120000Z",
+  "count": 3,
+  "documents": [ { "id": "...", "content": "...", "tags": {}, ... } ]
+}
+```
+
 ## Method-to-script mapping
 
 | Library method | Script |
@@ -68,6 +91,7 @@ superseded, flushed).
 | `engine.remember()` | `skill/scripts/remember.py` |
 | `engine.recall()` | `skill/scripts/recall.py` |
 | `engine.consolidate()` | `skill/scripts/consolidate.py` |
+| `engine.export()` | `skill/scripts/export.py` |
 
 ## Design notes
 
