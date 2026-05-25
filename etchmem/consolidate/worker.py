@@ -52,8 +52,14 @@ accurate knowledge article from a set of raw signal fragments.
 {fragments}
 
 ## Instructions
+- Summarize all stored information properly: compress each point to its main
+  idea while keeping the same words and phrasing from the fragments wherever
+  possible.
 - Write a single, cohesive knowledge article that captures all key facts.
 - Do NOT invent facts not present in the fragments.
+- Opinions, preferences, and subjective claims must NOT be stated as facts.
+  Attribute them explicitly, e.g. "There is an opinion that grapefruits are
+  the best" — never "Grapefruits are the best."
 - Each fragment may be prefixed with a timestamp like `[21 Jun 2025, 15:25 UTC]`.
   Preserve these timestamps verbatim inline, anchoring the facts they precede,
   e.g. "As of 21 Jun 2025, 15:25 UTC, the deployment was rolled back."
@@ -75,9 +81,16 @@ accurate and incorporates the new information.
 {fresh}
 
 ## Instructions
+- Write ONLY what appears in the existing article and fresh context. Do NOT
+  add new facts, inferences, or knowledge from your own training.
+- Summarize properly: compress to the main idea of each point while keeping
+  the same words and phrasing from the source material wherever possible.
 - Preserve ALL load-bearing facts from the existing article.
 - Incorporate relevant new information from the fresh context.
 - Remove outdated claims only when the fresh context explicitly supersedes them.
+- Opinions, preferences, and subjective claims must NOT be stated as facts.
+  Attribute them explicitly, e.g. "There is an opinion that grapefruits are
+  the best" — never "Grapefruits are the best."
 - Fresh context fragments may be prefixed with a timestamp like `[21 Jun 2025, 15:25 UTC]`.
   Preserve these timestamps verbatim inline, anchoring the facts they precede.
   Also carry forward any timestamps already present in the existing article.

@@ -6,6 +6,11 @@
 
 ## When to use this skill
 
+Use this skill **whenever the task involves agent knowledge or memory** — not
+only for explicit remember/recall requests. Any information that will help the
+agent mature its skills, improve future decisions, or preserve institutional
+context should flow through etchmem (deposit → consolidate → recall).
+
 Trigger this skill when an agent needs to:
 - **Deposit** new information: `remember.py`
 - **Retrieve** knowledge (with automatic reconsolidation tracking): `recall.py`
